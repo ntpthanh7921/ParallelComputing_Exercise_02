@@ -50,12 +50,13 @@ locally as a GraphML file.
   
   * Modify the `place_name` variable to change the target location if needed
     (default is London).
-    
-  * You can also change the desired `output_filename`. 
 
-    ```python # ---
-    Configuration --- place_name = "London, UK" # <-- CHANGE THIS for a
-    different location output_filename = "london_drive_simplified.graphml" # <-- CHANGE THIS for a different output name
+  * You can also change the desired `output_filename`.
+
+    ```python
+    # --- Configuration --- 
+    place_name = "London, UK" # <-- CHANGE THIS for a different location 
+    output_filename = "london_drive_simplified.graphml" # <-- CHANGE THIS for a different output name
     ```
 
 * **Usage:**
