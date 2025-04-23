@@ -1,93 +1,177 @@
 import gdown
 import os
 import sys
+import threading
 
 # --- Configuration ---
-# !!! REPLACE THIS WITH YOUR ACTUAL GOOGLE DRIVE SHARED LINK !!!
-# Example formats:
-# shared_link = "https://drive.google.com/file/d/YOUR_FILE_ID/view?usp=sharing"
-# shared_link = "https://drive.google.com/uc?id=YOUR_FILE_ID"
-# shared_link = "https://drive.google.com/open?id=YOUR_FILE_ID"
+# Define download details for each location
+drive_files = {
+    "shinjuku": {
+        "url": "https://drive.google.com/file/d/1-zfn9KgKmur7F6t14hNe_OoTiOng_hJp/view?usp=sharing",
+        "output_filename": "shinjuku_tokyo_drive_simplified.graphml",  # Expected name
+    },
+    "london": {
+        "url": "https://drive.google.com/file/d/1ldC0kWpWzJ2fXQhDjyziwmFRIYeXwLBy/view?usp=sharing",
+        "output_filename": "london_drive_simplified.graphml",  # Expected name
+    },
+}
 
-shared_link = (
-    "https://drive.google.com/file/d/1ldC0kWpWzJ2fXQhDjyziwmFRIYeXwLBy/view?usp=sharing"
-)
 
 # --- Script Logic ---
 
 
-def download_from_gdrive(url):
+def download_from_gdrive(url, expected_filename):
     """
-    Downloads a file from a Google Drive shared link to the current directory,
-    preserving the original filename.
+    Downloads a file from a Google Drive shared link to the current directory.
+    Uses the expected_filename if gdown can't determine it automatically.
+    Returns True if successful, False otherwise.
     """
-    print(f"Attempting to download from URL: {url}")
+    thread_name = threading.current_thread().name
+    print(f"[{thread_name}] Starting download for: {expected_filename}")
+    print(f"[{thread_name}] From URL: {url}")
 
     # Basic check if the placeholder URL is still there
-    if "YOUR_GOOGLE_DRIVE_SHARED_LINK_HERE" in url or "drive.google.com" not in url:
+    if "YOUR_" in url or "drive.google.com" not in url:
         print(
-            "\nError: Please replace 'YOUR_GOOGLE_DRIVE_SHARED_LINK_HERE' "
-            "with your actual Google Drive shared link in the script.",
+            f"\n[{thread_name}] Error: Placeholder URL detected for {expected_filename}. "
+            "Please add the actual Google Drive shared link in the script.",
             file=sys.stderr,
         )
-        return None
+        return False  # Indicate failure
 
     try:
-        # gdown.download handles extracting the file ID and downloading.
-        # Setting output=None (or omitting it) makes gdown save the file
-        # to the current directory using the filename from Google Drive.
-        # quiet=False shows download progress.
-        # fuzzy=True helps parse various GDrive URL formats.
-        print("Starting download (this might take a moment for large files)...")
-        downloaded_path = gdown.download(url=url, output=None, quiet=False, fuzzy=True)
+        print(f"[{thread_name}] Attempting download via gdown...")
+        downloaded_path = gdown.download(
+            url=url, output=None, quiet=True, fuzzy=True
+        )  # quiet=True for less cluttered parallel output
 
         if downloaded_path and os.path.exists(downloaded_path):
-            print(
-                f"\nSuccessfully downloaded and saved file as: '{os.path.basename(downloaded_path)}' "
-                f"in directory: '{os.path.dirname(os.path.abspath(downloaded_path))}'"
-            )
-            return downloaded_path
+            actual_filename = os.path.basename(downloaded_path)
+            # Simple success message
+            print(f"\n[{thread_name}] Successfully downloaded: '{actual_filename}'")
+
+            # Optional: Rename if needed and track success
+            if actual_filename != expected_filename:
+                print(
+                    f"[{thread_name}] Warning: Downloaded name '{actual_filename}' != expected '{expected_filename}'."
+                )
+                # Add renaming logic here if desired
+
+            return True  # Indicate success
+
         elif downloaded_path is None:
-            # gdown returns None if download fails (e.g., permission error, invalid link)
-            print("\nError: Download failed. gdown returned None.", file=sys.stderr)
             print(
-                "Common reasons include incorrect URL, insufficient permissions "
-                "(set sharing to 'Anyone with the link'), or network issues.",
+                f"\n[{thread_name}] Error: Download failed for {expected_filename} (gdown returned None).",
                 file=sys.stderr,
             )
-            return None
+            print(
+                f"[{thread_name}] Check URL, permissions ('Anyone with link'), and network.",
+                file=sys.stderr,
+            )
+            return False  # Indicate failure
         else:
-            # This case should be rare if gdown returns a path but it doesn't exist
             print(
-                f"\nWarning: gdown reported path '{downloaded_path}', but the file doesn't seem to exist.",
+                f"\n[{thread_name}] Warning: gdown reported path '{downloaded_path}' for {expected_filename}, but file doesn't exist.",
                 file=sys.stderr,
             )
-            return None
+            return False  # Indicate failure
 
     except Exception as e:
-        print(f"\nAn error occurred during the download process: {e}", file=sys.stderr)
-        print("Please double-check:", file=sys.stderr)
-        print("1. Your internet connection.", file=sys.stderr)
         print(
-            "2. The Google Drive shared link is correct and accessible.",
+            f"\n[{thread_name}] An error occurred during download for {expected_filename}: {e}",
             file=sys.stderr,
         )
         print(
-            "3. File sharing permissions are set to 'Anyone with the link'.",
+            f"[{thread_name}] Check internet, URL validity, permissions, and gdown installation.",
             file=sys.stderr,
         )
-        print(
-            "4. The 'gdown' library is installed (`pip install gdown`).",
-            file=sys.stderr,
-        )
-        return None
+        return False  # Indicate failure
 
+
+# --- Interactive Choice ---
+selected_keys = []
+while True:
+    print("\nSelect which pre-processed network(s) to download from Google Drive:")
+    print("1: Shinjuku, Tokyo (Test Data)")
+    print("2: London, UK (Full Data)")
+    print("3: Both Shinjuku and London (Parallel Download)")  # Updated text
+    print("4: Exit")
+    choice = input("Enter your choice (1, 2, 3, or 4): ").strip()
+
+    if choice == "1":
+        selected_keys = ["shinjuku"]
+        break
+    elif choice == "2":
+        selected_keys = ["london"]
+        break
+    elif choice == "3":
+        selected_keys = ["shinjuku", "london"]
+        break
+    elif choice == "4":
+        print("Exiting script.")
+        sys.exit()
+    else:
+        print("Invalid choice. Please enter 1, 2, 3, or 4.")
 
 # --- Main Execution ---
-if __name__ == "__main__":
-    downloaded_file = download_from_gdrive(shared_link)
+if not selected_keys:
+    print("No files selected. Exiting.")
+else:
+    print(f"\nSelected: {', '.join(selected_keys)}")
 
-    if downloaded_file:
-        print("\nDownload process finished successfully.")
-    else:
-        print("\nDownload process finished with errors.")
+    threads = []
+    skipped_placeholders = False
+    final_success_count = 0
+
+    if len(selected_keys) > 1:
+        print("Starting parallel downloads...")
+        for key in selected_keys:
+            if key in drive_files:
+                config = drive_files[key]
+                # Check for placeholder URL *before* creating thread
+                if "YOUR_" in config["url"]:
+                    print(
+                        f"\nSkipping {config['output_filename']}: Please replace the placeholder URL in the script."
+                    )
+                    skipped_placeholders = True
+                    continue  # Skip this file
+
+                # Create and start a thread for each download
+                thread = threading.Thread(
+                    target=download_from_gdrive,
+                    args=(config["url"], config["output_filename"]),
+                    name=f"Thread-{key}",  # Give threads meaningful names
+                )
+                threads.append(thread)
+                thread.start()
+            else:
+                print(f"Warning: Configuration for '{key}' not found. Skipping.")
+
+        # Wait for all started threads to complete
+        print("\nWaiting for downloads to finish...")
+        for thread in threads:
+            thread.join()  # This blocks until the thread finishes
+        # Note: We aren't explicitly checking return values here for simplicity,
+        # rely on printed messages from the function. Could be enhanced.
+
+    elif len(selected_keys) == 1:
+        # Run sequentially if only one is selected
+        key = selected_keys[0]
+        print(f"Starting sequential download for {key}...")
+        if key in drive_files:
+            config = drive_files[key]
+            if "YOUR_" in config["url"]:
+                print(
+                    f"\nSkipping {config['output_filename']}: Please replace the placeholder URL in the script."
+                )
+                skipped_placeholders = True
+            else:
+                # Directly call the function
+                download_from_gdrive(config["url"], config["output_filename"])
+        else:
+            print(f"Warning: Configuration for '{key}' not found. Skipping.")
+
+    print("\n----------------------------------------")
+    print("Overall download process finished.")
+    if skipped_placeholders:
+        print("Note: One or more downloads were skipped due to placeholder URLs.")
