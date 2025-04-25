@@ -1,61 +1,48 @@
-# Minimum CMake version required (pybind11 needs ~3.4+, Python package needs ~3.12+)
-# Let's use 3.15 for good modern practices and robust Python finding.
 cmake_minimum_required(VERSION 3.15)
+project(assignment2_cpp LANGUAGES CXX) # Renamed project
 
-# Define the project name (can be anything, but often matches the module)
-project(cpp_astar LANGUAGES CXX)
+if(CMAKE_BUILD_TYPE STREQUAL "Release" AND NOT MSVC)
+  string(APPEND CMAKE_MODULE_LINKER_FLAGS_RELEASE " -flto=auto")
+endif()
 
-# --- C++ Standard ---
-# pybind11 requires C++11 or newer. C++17 is a good modern choice.
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-# Optional: Clang-specific flag often useful with pybind11
-# if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-#     target_compile_options(your_target PRIVATE -fno-strict-aliasing)
-# endif()
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-# --- Add pybind11 ---
-# Find the pybind11 submodule relative to this CMakeLists.txt location
-# This makes pybind11 targets and functions available (like pybind11_add_module)
 add_subdirectory(extern/pybind11)
 
-# --- Find Python 3 ---
-# This finds the Python interpreter, libraries, and include directories needed for building
-# the extension module. Using REQUIRED ensures CMake stops if Python isn't found.
-# The COMPONENTS ensure we get what pybind11 needs.
 find_package(Python 3 COMPONENTS Interpreter Development REQUIRED)
-message(STATUS "Found Python 3 Interpreter: ${Python_EXECUTABLE}")
-message(STATUS "Found Python 3 Include Dirs: ${Python_INCLUDE_DIRS}")
-message(STATUS "Found Python 3 Libraries: ${Python_LIBRARIES}")
+message(STATUS "Using Python: ${Python_EXECUTABLE}")
+message(STATUS "Using Python includes: ${Python_INCLUDE_DIRS}")
 
-# --- Define Source Files ---
-# List all the C++ source files that need to be compiled for the module.
-# Headers (.h) are NOT listed here; they are found via include_directories.
-set(MODULE_SOURCES
-    src/test.cpp
+# --- A* Demo Library ---
+add_library(astar_demo_lib src/demo/astar.cpp)
+set_target_properties(astar_demo_lib PROPERTIES POSITION_INDEPENDENT_CODE ON)
+target_include_directories(astar_demo_lib PUBLIC
+    "${CMAKE_CURRENT_SOURCE_DIR}/include"
+)
+target_link_libraries(astar_demo_lib PRIVATE
+    pybind11::headers
+    Python::Python
 )
 
-# --- Define the Python Module Target ---
-# This is the core pybind11 command.
-# It creates a shared library target with the correct name and suffix for Python
-# (e.g., astar_module.cpython-310-x86_64-linux-gnu.so on Linux).
-# 'MODULE' creates a Python module (no 'lib' prefix).
-# 'SHARED' would create a standard shared library (e.g., libastar_module.so). Use MODULE.
-pybind11_add_module(cpp_astar MODULE ${MODULE_SOURCES})
+# --- Main Python Module ---
+set(MODULE_SOURCES
+    src/bindings.cpp
+)
+pybind11_add_module(assignment2_cpp MODULE ${MODULE_SOURCES}) # Renamed module
 
-# --- Include Directories ---
-# Tell the compiler where to find your project's header files (.h).
-# pybind11_add_module typically handles including the Python and pybind11 headers automatically.
-target_include_directories(cpp_astar PRIVATE
-    # Path relative to this CMakeLists.txt
+# Link the Python module against the A* library
+target_link_libraries(assignment2_cpp PRIVATE astar_demo_lib)
+
+# Include directories for the main module (bindings.cpp)
+target_include_directories(assignment2_cpp PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
 )
 
-# --- Output Location ---
-# By default, CMake builds targets into the build directory (CMAKE_BINARY_DIR).
-# This is the standard practice (out-of-source builds).
-# The compiled module (e.g., .so file) will end up directly inside the build directory you create.
-# There is usually NO need to explicitly set LIBRARY_OUTPUT_DIRECTORY unless you have specific requirements.
-# Your Python script will need to add this *build* directory to its sys.path.
+message(STATUS "The Python module '${PROJECT_NAME}' will be built in the CMake build directory.")
 
-message(STATUS "The Python module 'astar_module' will be built in the CMake build directory.")
+if (NOT MSVC)
+  target_compile_options(assignment2_cpp PRIVATE "-fvisibility=hidden") # Renamed module
+  target_compile_options(astar_demo_lib PRIVATE "-fvisibility=hidden")
+endif()
