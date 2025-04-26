@@ -7,8 +7,11 @@ project(assignment2_cpp LANGUAGES CXX)
 # --- Global Settings ---
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True) # Enforce C++17 standard
-set(CMAKE_POSITION_INDEPENDENT_CODE ON) # Build position-independent code (needed for modules/shared libs)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # Generate compile_commands.json for tooling
+set(CMAKE_POSITION_INDEPENDENT_CODE ON) # Needed for modules/shared libs
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # For tooling
+
+# --- Enable Testing ---
+enable_testing()
 
 # ==============================================================================
 # Compiler Flags
@@ -16,12 +19,11 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # Generate compile_commands.json for tooli
 
 # --- Warning Flags ---
 if(MSVC)
-  # Microsoft Visual C++ Compiler: Level 4 warnings
+  # Microsoft Visual C++ Compiler
   add_compile_options(/W4)
 else()
-  # GCC / Clang: Enable common warnings
+  # GCC / Clang
   add_compile_options(-Wall -Wextra -Wpedantic)
-  # -fvisibility=hidden reduces exported symbols (good practice for libraries/modules)
   add_compile_options(-fvisibility=hidden)
 endif()
 
@@ -37,34 +39,46 @@ endif()
 # ==============================================================================
 # Dependencies
 # ==============================================================================
+include(FetchContent) # Ensure FetchContent module is included
 
-# --- pybind11 ---
-# Assumes pybind11 source is located in extern/pybind11
-add_subdirectory(extern/pybind11)
+# --- pybind11 (via FetchContent) ---
+FetchContent_Declare(
+  pybind11
+  GIT_REPOSITORY https://github.com/pybind/pybind11.git
+  GIT_TAG        v2.13.6 # Or other desired release tag
+)
+FetchContent_MakeAvailable(pybind11)
 
 # --- Python ---
 find_package(Python 3 COMPONENTS Interpreter Development REQUIRED)
+
+# --- GoogleTest (via FetchContent) ---
+FetchContent_Declare(
+  googletest
+  GIT_REPOSITORY https://github.com/google/googletest.git
+  GIT_TAG v1.16.0 # Or other desired release tag
+)
+FetchContent_MakeAvailable(googletest)
 
 # ==============================================================================
 # Library Targets
 # ==============================================================================
 
 # --- A* Demo Library (Static Library) ---
-add_library(demo_lib src/demo/astar.cpp)
-# No need to set PIC property, inherited from global CMAKE_POSITION_INDEPENDENT_CODE
+add_library(demo_lib STATIC src/demo/astar.cpp)
 target_include_directories(demo_lib PUBLIC
-    "${CMAKE_CURRENT_SOURCE_DIR}/include" # Makes 'include/' available to demo_lib and linkers
+    "${CMAKE_CURRENT_SOURCE_DIR}/include"
 )
+# Link pybind11 headers because astar.h includes road_network.h which uses pybind11 types
 target_link_libraries(demo_lib PRIVATE
-    pybind11::headers # Link pybind11 headers (needed if demo uses pybind types, otherwise remove)
-    Python::Python    # Link Python libs (needed if demo uses Python C API, otherwise remove)
+    pybind11::headers
+    Python::Python
 )
-
 
 # --- Data Structures Library (Header-Only) ---
 add_library(data_structures_lib INTERFACE)
 target_include_directories(data_structures_lib INTERFACE
-    "${CMAKE_CURRENT_SOURCE_DIR}/include" # Makes 'include/' available via this target
+    "${CMAKE_CURRENT_SOURCE_DIR}/include"
 )
 
 # ==============================================================================
@@ -79,13 +93,19 @@ pybind11_add_module(assignment2_cpp MODULE ${MODULE_SOURCES})
 target_link_libraries(assignment2_cpp PRIVATE
     demo_lib            # Link the A* implementation
     data_structures_lib # Link the header-only data structures (propagates include dirs)
+    # pybind11 targets (like pybind11::module) are handled by pybind11_add_module
 )
 
 # --- Include Directories for the Python Module ---
-# Includes required directly by bindings.cpp
 target_include_directories(assignment2_cpp PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
 )
+
+# ==============================================================================
+# Testing Setup
+# ==============================================================================
+# Add the tests subdirectory (contains test executable definitions)
+add_subdirectory(tests)
 
 # ==============================================================================
 # Build Information Message
