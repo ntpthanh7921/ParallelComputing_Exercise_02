@@ -20,10 +20,6 @@ struct AStarNode
 std::vector<long long> astar_search(const RoadNetwork &network,  // Accepts RoadNetwork
                                     long long start_node_id, long long goal_node_id)
 {
-    // Get graph and nodes from the network object
-    const Graph &graph = network.get_graph();
-    const NodeMap &nodes = network.get_nodes();
-
     // Check if start and goal nodes exist in the nodes map
     const Node *start_node_ptr = network.get_node(start_node_id);
     const Node *goal_node_ptr = network.get_node(goal_node_id);
