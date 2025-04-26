@@ -43,7 +43,7 @@ private:
     // The caller is responsible for unlocking pred and curr.
     std::pair<FineNode<T> *, FineNode<T> *> find_and_lock_hoh(const T &val) const
     {
-        FineNode<T> *pred = nullptr, *curr = nullptr, *next_node = nullptr;
+        FineNode<T> *pred = nullptr, *curr = nullptr;
         pred = head;
         pred->lock();
         curr = pred->next;
