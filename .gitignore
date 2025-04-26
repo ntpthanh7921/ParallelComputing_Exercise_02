@@ -216,3 +216,4 @@ pyrightconfig.json
 *.pdf
 osm_data/cache
 osm_data/*.graphml
+references/
