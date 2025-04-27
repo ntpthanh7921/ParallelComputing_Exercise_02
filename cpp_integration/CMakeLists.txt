@@ -8,7 +8,13 @@ project(assignment2_cpp LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # For tooling like clang-tidy
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # For tooling
+
+# --- Sanitizer Options ---
+option(ENABLE_ASAN "Enable AddressSanitizer" OFF)
+option(ENABLE_UBSAN "Enable UndefinedBehaviorSanitizer" OFF)
+option(ENABLE_TSAN "Enable ThreadSanitizer" OFF)
+# Note: ASan and TSan are mutually exclusive
 
 # --- Enable Testing ---
 enable_testing()
@@ -33,6 +39,46 @@ else()
   add_compile_options(-fvisibility=hidden)
 endif()
 
+# --- Sanitizer Flags Setup ---
+if(NOT MSVC)
+  if(ENABLE_ASAN AND ENABLE_TSAN)
+    message(FATAL_ERROR "ASAN and TSAN cannot be enabled simultaneously.")
+  endif()
+
+  set(SANITIZER_COMPILE_FLAGS "")
+  set(SANITIZER_LINK_FLAGS "")
+
+  if(ENABLE_ASAN)
+    list(APPEND SANITIZER_COMPILE_FLAGS "-fsanitize=address")
+    list(APPEND SANITIZER_LINK_FLAGS "-fsanitize=address")
+    message(STATUS "AddressSanitizer (ASAN) enabled.")
+  endif()
+
+  if(ENABLE_UBSAN)
+    list(APPEND SANITIZER_COMPILE_FLAGS "-fsanitize=undefined")
+    list(APPEND SANITIZER_LINK_FLAGS "-fsanitize=undefined")
+    message(STATUS "UndefinedBehaviorSanitizer (UBSAN) enabled.")
+  endif()
+
+  if(ENABLE_TSAN)
+    list(APPEND SANITIZER_COMPILE_FLAGS "-fsanitize=thread")
+    list(APPEND SANITIZER_LINK_FLAGS "-fsanitize=thread")
+    message(STATUS "ThreadSanitizer (TSAN) enabled.")
+  endif()
+
+  # Apply Sanitizer Flags
+  if(SANITIZER_COMPILE_FLAGS)
+    add_compile_options(${SANITIZER_COMPILE_FLAGS})
+    add_link_options(${SANITIZER_LINK_FLAGS})
+    # Recommend -O0 -g for sanitizer builds (often done via CMAKE_BUILD_TYPE=Debug)
+    string(APPEND CMAKE_CXX_FLAGS_DEBUG " -O0 -g")
+  endif()
+else()
+  if(ENABLE_ASAN OR ENABLE_UBSAN OR ENABLE_TSAN)
+    message(WARNING "Sanitizers not automatically configured for MSVC. Use VS ASan support.")
+  endif()
+endif()
+
 # --- Optimization Flags (LTO Example) ---
 if(CMAKE_BUILD_TYPE STREQUAL "Release" AND NOT MSVC)
   string(APPEND CMAKE_CXX_FLAGS_RELEASE " -flto=auto")
@@ -44,8 +90,7 @@ endif()
 # ==============================================================================
 # Apply clang-tidy (if found)
 # ==============================================================================
-# Applies to all targets defined after this point.
-# Assumes a .clang-tidy file exists in the project root for configuration.
+# Assumes a .clang-tidy file exists in the project root.
 if(CLANG_TIDY_EXE)
   set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_EXE})
   message(STATUS "clang-tidy found, enabling static analysis.")
