@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.16)
 project(assignment2_cpp LANGUAGES CXX)
 
 # --- Global Settings ---
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # For tooling
@@ -14,18 +14,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # For tooling
 option(ENABLE_ASAN "Enable AddressSanitizer" OFF)
 option(ENABLE_UBSAN "Enable UndefinedBehaviorSanitizer" OFF)
 option(ENABLE_TSAN "Enable ThreadSanitizer" OFF)
-# Note: ASan and TSan are mutually exclusive
 
 # --- Enable Testing ---
 enable_testing()
-
-# ==============================================================================
-# Tooling Setup (Clang-Tidy)
-# ==============================================================================
-find_program(CLANG_TIDY_EXE clang-tidy)
-if(NOT CLANG_TIDY_EXE)
-  message(WARNING "clang-tidy not found - static analysis skipped.")
-endif()
 
 # ==============================================================================
 # Compiler Flags
@@ -70,12 +61,12 @@ if(NOT MSVC)
   if(SANITIZER_COMPILE_FLAGS)
     add_compile_options(${SANITIZER_COMPILE_FLAGS})
     add_link_options(${SANITIZER_LINK_FLAGS})
-    # Recommend -O0 -g for sanitizer builds (often done via CMAKE_BUILD_TYPE=Debug)
+    # Recommend -O0 -g for sanitizer builds
     string(APPEND CMAKE_CXX_FLAGS_DEBUG " -O0 -g")
   endif()
 else()
   if(ENABLE_ASAN OR ENABLE_UBSAN OR ENABLE_TSAN)
-    message(WARNING "Sanitizers not automatically configured for MSVC. Use VS ASan support.")
+    message(WARNING "Sanitizers not automatically configured for MSVC.")
   endif()
 endif()
 
@@ -85,15 +76,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release" AND NOT MSVC)
   string(APPEND CMAKE_EXE_LINKER_FLAGS_RELEASE " -flto=auto")
   string(APPEND CMAKE_SHARED_LINKER_FLAGS_RELEASE " -flto=auto")
   string(APPEND CMAKE_MODULE_LINKER_FLAGS_RELEASE " -flto=auto")
-endif()
-
-# ==============================================================================
-# Apply clang-tidy (if found)
-# ==============================================================================
-# Assumes a .clang-tidy file exists in the project root.
-if(CLANG_TIDY_EXE)
-  set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_EXE})
-  message(STATUS "clang-tidy found, enabling static analysis.")
 endif()
 
 # ==============================================================================
