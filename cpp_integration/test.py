@@ -13,17 +13,31 @@ GRAPHML_PATH = os.path.abspath(
     os.path.join(SCRIPT_DIR, "..", "osm_data", GRAPHML_FILENAME)
 )
 WEIGHT_ATTRIBUTE = "length"  # Edge attribute used for pathfinding weight
+# Default CMake preset name to look for the build artifacts
+DEFAULT_PRESET_NAME = "release"
 
 
 # --- Helper: Add Build Directory to Path ---
-def add_custom_module_path(build_dir_name="build"):
-    """Adds the CMake build directory to the Python path."""
+def add_custom_module_path(preset_name=DEFAULT_PRESET_NAME):
+    """Adds the CMake build directory (based on preset) to the Python path."""
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    build_dir = os.path.join(script_dir, build_dir_name)
+    # Construct path based on preset convention: build/<presetName>
+    build_dir = os.path.join(script_dir, "build", preset_name)
     if not os.path.isdir(build_dir):
-        print(f"Build directory not found at {build_dir}")
-        print("Please build the C++ module first (e.g., using CMake).")
-        sys.exit(1)
+        print(f"Build directory for preset '{preset_name}' not found at {build_dir}")
+        print(
+            f"Please build the C++ module using the '{preset_name}' preset first (e.g., using 'cmake --build --preset {preset_name}')."
+        )
+        # Fallback check for old simple build directory
+        old_build_dir = os.path.join(script_dir, "build")
+        if os.path.isdir(old_build_dir):
+            print(
+                f"Found legacy build directory at {old_build_dir}. Adding it instead, but preset structure is recommended."
+            )
+            build_dir = old_build_dir
+        else:
+            sys.exit(1)
+
     sys.path.insert(0, build_dir)
     print(f"Added build directory to path: {build_dir}")
 
@@ -211,7 +225,8 @@ def compare_results(cpp_path, cpp_time, nx_path, nx_time, G_nx, weight_attribute
 
 # --- Main Execution Block ---
 def main():
-    # Setup: Add build dir to path and import C++ module
+    # Setup: Add build dir to path (defaults to 'release' preset)
+    # You could modify this to take a command-line argument for the preset name
     add_custom_module_path()
     try:
         import assignment2_cpp
