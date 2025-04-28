@@ -1,6 +1,8 @@
 #pragma once
 
-#include "iset.h"  // Include the common interface
+#include "iset.h"   // Include the common interface
+#include <atomic>   // For std::atomic
+#include <cstddef>  // For size_t
 #include <limits>
 #include <mutex>  // For std::mutex, std::unique_lock
 #include <new>
@@ -12,7 +14,7 @@ namespace DataStructure
 namespace Set
 {
 
-// --- Node Structure for Fine-Grained Implementation ---
+// Node Structure for Fine-Grained Implementation
 template <typename T>
 struct FineNode
 {
@@ -22,25 +24,25 @@ struct FineNode
 
     FineNode(T v, FineNode<T> *n = nullptr) : val(v), next(n) { }
 
-    // No copy/move for mutex, implicitly deleted/defaulted ok for now
-    // ~FineNode() = default; // Default destructor ok
+    // Default destructor ok
+    // No copy/move for mutex (implicitly deleted/defaulted)
 
     void lock() { node_mutex.lock(); }
 
     void unlock() { node_mutex.unlock(); }
 };
 
-// --- Fine-Grained Locking Implementation ---
+// Fine-Grained Locking Implementation
 template <typename T>
 class SortedLinkedList_FineLock : public ISet<T>
 {
 private:
     FineNode<T> *head;
     FineNode<T> *tail;
+    std::atomic<size_t> current_size{0};  // Atomic counter for size
 
     // Helper: Locates and locks predecessor and current nodes using Hand-over-Hand.
-    // Returns a pair of locked nodes {pred, curr}.
-    // The caller is responsible for unlocking pred and curr.
+    // Returns {pred, curr} locked. Caller must unlock.
     std::pair<FineNode<T> *, FineNode<T> *> find_and_lock_hoh(const T &val) const
     {
         FineNode<T> *pred = nullptr, *curr = nullptr;
@@ -49,21 +51,40 @@ private:
         curr = pred->next;
         curr->lock();
 
-        while (curr->val < val)
+        while (curr != tail && curr->val < val)  // Stop if we reach tail or pass val
         {
-            pred->unlock();  // Unlock previous predecessor
+            pred->unlock();
             pred = curr;
+            // pred is already locked (it was the old curr)
             curr = curr->next;
-            curr->lock();  // Lock new current node
+            if (curr)
+            {  // Check if curr became null (should only happen if tail is reached improperly)
+                curr->lock();
+            }
+            else
+            {
+                // This case indicates a problem, potentially tail deletion or bug
+                // For safety, unlock pred and maybe throw or handle error
+                pred->unlock();
+                // Handle error appropriately, e.g., throw exception
+                throw std::runtime_error("Fine-grained search encountered null node before tail.");
+            }
         }
         // Return with pred and curr locked
         return {pred, curr};
     }
 
+    // Internal unsafe getter for head (needed for unsafe check_invariants)
+    // USE WITH EXTREME CAUTION - only when list is quiescent.
+    FineNode<T> *get_head_unsafe() const { return head; }
+
+    // Internal unsafe getter for tail (needed for unsafe check_invariants)
+    FineNode<T> *get_tail_unsafe() const { return tail; }
+
 public:
     // Constructor
     SortedLinkedList_FineLock() : head(nullptr), tail(nullptr)
-    {
+    {  // current_size is zero initialized
         try
         {
             T min_val, max_val;
@@ -77,7 +98,6 @@ public:
                 throw std::logic_error(
                     "Type T requires std::numeric_limits specialization for sentinels.");
             }
-            // Note: Node mutexes inside FineNode are default-constructed by FineNode constructor
             tail = new FineNode<T>(max_val, nullptr);
             head = new FineNode<T>(min_val, tail);
         }
@@ -85,7 +105,6 @@ public:
         {
             delete head;
             delete tail;
-            // Note: Node mutexes are managed by FineNode destructors during cleanup
             throw std::runtime_error("SortedLinkedList_FineLock construction failed.");
         }
     }
@@ -107,12 +126,11 @@ public:
     SortedLinkedList_FineLock(const SortedLinkedList_FineLock &) = delete;
     SortedLinkedList_FineLock &operator=(const SortedLinkedList_FineLock &) = delete;
 
-    // Default move semantics might be problematic with mutex members in nodes
-    // Prefer explicit definition or deletion if moves are needed.
+    // Explicitly delete move semantics due to mutex members in nodes and potential complexity
     SortedLinkedList_FineLock(SortedLinkedList_FineLock &&) = delete;
     SortedLinkedList_FineLock &operator=(SortedLinkedList_FineLock &&) = delete;
 
-    // --- Interface Methods (with fine-grained locking) ---
+    // --- ISet Interface Methods ---
 
     bool contains(const T &val) const override
     {
@@ -125,7 +143,7 @@ public:
             curr = locked_pair.second;
             result = (curr != tail && curr->val == val);
         }
-        catch (...)
+        catch (...)  // Catch potential exceptions from find_and_lock_hoh
         {
             // Ensure locks are released if find_and_lock_hoh throws after locking
             if (curr)
@@ -135,8 +153,10 @@ public:
             throw;  // Rethrow original exception
         }
         // Unlock normally
-        curr->unlock();
-        pred->unlock();
+        if (curr)
+            curr->unlock();
+        if (pred)
+            pred->unlock();
         return result;
     }
 
@@ -159,6 +179,8 @@ public:
                 // Value doesn't exist, add it
                 FineNode<T> *new_node = new FineNode<T>(val, curr);
                 pred->next = new_node;
+                // Update size atomically while locks are held
+                current_size.fetch_add(1, std::memory_order_relaxed);
                 success = true;
             }
         }
@@ -173,7 +195,7 @@ public:
         }
         catch (...)
         {
-            // Other potential exceptions
+            // Other potential exceptions from find_and_lock_hoh
             if (curr)
                 curr->unlock();
             if (pred)
@@ -181,8 +203,10 @@ public:
             throw;
         }
         // Unlock normally
-        curr->unlock();
-        pred->unlock();
+        if (curr)
+            curr->unlock();
+        if (pred)
+            pred->unlock();
         return success;
     }
 
@@ -201,6 +225,8 @@ public:
             {
                 // Found node to remove
                 pred->next = curr->next;
+                // Update size atomically while locks are held
+                current_size.fetch_sub(1, std::memory_order_relaxed);
                 node_to_delete = curr;  // Keep track to delete later
                 success = true;
             }
@@ -220,15 +246,52 @@ public:
         }
 
         // Unlock nodes *before* deleting
-        curr->unlock();
-        pred->unlock();
+        // Note: curr might be the node_to_delete
+        if (curr)
+            curr->unlock();  // Unlock current node found by search
+        if (pred)
+            pred->unlock();  // Unlock predecessor node
 
         // Delete the node after releasing locks
-        // Note: Potential ABA/memory reclamation issues in real systems,
-        // might need epochs, hazard pointers, or GC. Simple delete here.
+        // Note: Potential ABA/memory reclamation issues in robust systems. Simple delete here.
         delete node_to_delete;
 
         return success;
+    }
+
+    // Returns the number of elements (thread-safe read).
+    size_t size() const override
+    {
+        // Relaxed memory order is sufficient for reading the counter
+        return current_size.load(std::memory_order_relaxed);
+    }
+
+    // Checks invariants.
+    // WARNING: NOT THREAD-SAFE if called concurrently
+    // with add/remove. Assumes list is quiescent (e.g., called after test threads join).
+    bool check_invariants() const override
+    {
+        // This check traverses without locks. It is inherently unsafe
+        // if the list is being modified concurrently. Use only for post-test validation.
+        FineNode<T> *h = get_head_unsafe();  // Use unsafe getter
+        FineNode<T> *t = get_tail_unsafe();  // Use unsafe getter
+        FineNode<T> *pred = h;
+        FineNode<T> *curr = h->next;
+
+        if (!h || !t || h->next == nullptr)
+            return false;  // Basic structure check
+
+        while (curr != t)
+        {
+            if (!curr)
+                return false;  // Should not encounter null before tail
+            if (pred->val > curr->val)
+                return false;  // Check sorted order
+            pred = curr;
+            curr = curr->next;
+        }
+        // Final check: last non-tail node should point to tail
+        return (pred->next == t);
     }
 };
 

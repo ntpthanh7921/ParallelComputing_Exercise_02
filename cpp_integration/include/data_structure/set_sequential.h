@@ -1,6 +1,7 @@
 #pragma once
 
 #include "iset.h"
+#include <cstddef>  // For size_t
 #include <limits>
 #include <new>        // For std::bad_alloc
 #include <stdexcept>  // For exceptions
@@ -10,18 +11,17 @@ namespace DataStructure
 namespace Set
 {
 
-// --- Node Structure for Sequential Implementation ---
+// Node Structure for Sequential Implementation
 template <typename T>
 struct SeqNode
 {
     T val;
     SeqNode<T> *next;
 
-    // Basic constructor
     SeqNode(T v, SeqNode<T> *n = nullptr) : val(v), next(n) { }
 };
 
-// --- Sequential Sorted Linked List Implementation ---
+// Sequential Sorted Linked List Implementation
 template <typename T>
 class SortedLinkedList_Sequential : public ISet<T>
 {
@@ -32,33 +32,30 @@ private:
     // Helper: Finds node *before* potential position of val
     SeqNode<T> *find_node(const T &val) const
     {
-        SeqNode<T> *curr = head;
-        SeqNode<T> *next = curr->next;
-        // Check next != nullptr is implicit if tail sentinel is always present
-        while (next->val < val)
+        SeqNode<T> *pred = head;
+        SeqNode<T> *curr = head->next;
+        while (curr != tail && curr->val < val)  // Stop if we reach tail or pass val
         {
-            curr = next;
-            next = curr->next;
+            pred = curr;
+            curr = curr->next;
         }
-        return curr;
+        return pred;
     }
 
 public:
-    // Constructor: Initializes sentinels using T's static methods
+    // Constructor: Initializes sentinels
     SortedLinkedList_Sequential() : head(nullptr), tail(nullptr)
     {
         try
         {
             T min_val, max_val;
-            // Check if numeric_limits is available for type T
             if constexpr (std::numeric_limits<T>::is_specialized)
             {
-                min_val = std::numeric_limits<T>::lowest();  // Use lowest for min sentinel
-                max_val = std::numeric_limits<T>::max();     // Use max for max sentinel
+                min_val = std::numeric_limits<T>::lowest();
+                max_val = std::numeric_limits<T>::max();
             }
             else
             {
-                // Handle types without numeric_limits if necessary, e.g., throw
                 throw std::logic_error(
                     "Type T requires std::numeric_limits specialization for sentinels.");
             }
@@ -67,8 +64,8 @@ public:
         }
         catch (...)
         {
-            delete head;  // Safe if nullptr
-            delete tail;  // Safe if nullptr
+            delete head;
+            delete tail;
             throw std::runtime_error("SortedLinkedList_Sequential construction failed.");
         }
     }
@@ -93,12 +90,12 @@ public:
     SortedLinkedList_Sequential(SortedLinkedList_Sequential &&) = default;
     SortedLinkedList_Sequential &operator=(SortedLinkedList_Sequential &&) = default;
 
-    // Interface methods implementation
+    // --- ISet Interface Methods ---
+
     bool contains(const T &val) const override
     {
         SeqNode<T> *pred = find_node(val);
         SeqNode<T> *curr = pred->next;
-        // Check if the node found is the target value and not the tail sentinel
         return (curr != tail && curr->val == val);
     }
 
@@ -119,8 +116,7 @@ public:
         }
         catch (const std::bad_alloc &e)
         {
-            throw std::runtime_error("Failed to allocate node for add operation: "
-                                     + std::string(e.what()));
+            throw std::runtime_error("Failed node allocation in add: " + std::string(e.what()));
         }
         return true;
     }
@@ -137,6 +133,41 @@ public:
             return true;
         }
         return false;  // Value not found
+    }
+
+    // Returns the number of elements (excluding sentinels).
+    size_t size() const override
+    {
+        size_t count = 0;
+        SeqNode<T> *current = head->next;  // Start after head sentinel
+        while (current != tail)            // Stop before tail sentinel
+        {
+            count++;
+            current = current->next;
+        }
+        return count;
+    }
+
+    // Checks if the list is sorted and pointers are consistent.
+    bool check_invariants() const override
+    {
+        SeqNode<T> *pred = head;
+        SeqNode<T> *curr = head->next;
+
+        if (!head || !tail || head->next == nullptr)
+            return false;  // Basic structure check
+
+        while (curr != tail)
+        {
+            if (!curr)
+                return false;  // Should not encounter null before tail
+            if (pred->val > curr->val)
+                return false;  // Check sorted order
+            pred = curr;
+            curr = curr->next;
+        }
+        // Final check: last non-tail node should point to tail
+        return (pred->next == tail);
     }
 };
 
