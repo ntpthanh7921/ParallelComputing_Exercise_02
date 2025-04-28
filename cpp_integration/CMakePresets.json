@@ -10,7 +10,7 @@
     },
     {
       "name": "debug",
-      "description": "Standard Debug build",
+      "description": "Standard Debug build (Default Compiler)",
       "inherits": "base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
@@ -21,7 +21,7 @@
     },
     {
       "name": "release",
-      "description": "Standard Release build (with LTO if applicable)",
+      "description": "Standard Release build (Default Compiler, with LTO if applicable)",
       "inherits": "base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
@@ -32,7 +32,7 @@
     },
     {
       "name": "debug-asan",
-      "description": "Debug build with AddressSanitizer and UndefinedBehaviorSanitizer",
+      "description": "Debug build with AddressSanitizer and UndefinedBehaviorSanitizer (Default Compiler)",
       "inherits": "debug",
       "cacheVariables": {
         "ENABLE_ASAN": "ON",
@@ -42,12 +42,44 @@
     },
     {
       "name": "debug-tsan",
-      "description": "Debug build with ThreadSanitizer",
+      "description": "Debug build with ThreadSanitizer (Default Compiler)",
       "inherits": "debug",
       "cacheVariables": {
         "ENABLE_ASAN": "OFF",
         "ENABLE_UBSAN": "ON",
         "ENABLE_TSAN": "ON"
+      }
+    },
+    {
+      "name": "debug-clang",
+      "description": "Debug build using Clang++",
+      "inherits": "debug",
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER": "clang++"
+      }
+    },
+    {
+      "name": "release-clang",
+      "description": "Release build using Clang++ (with LTO if applicable)",
+      "inherits": "release",
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER": "clang++"
+      }
+    },
+    {
+      "name": "debug-asan-clang",
+      "description": "Debug build with ASan/UBSan using Clang++",
+      "inherits": "debug-asan",
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER": "clang++"
+      }
+    },
+    {
+      "name": "debug-tsan-clang",
+      "description": "Debug build with TSan using Clang++",
+      "inherits": "debug-tsan",
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER": "clang++"
       }
     }
   ],
@@ -67,6 +99,22 @@
     {
       "name": "debug-tsan",
       "configurePreset": "debug-tsan"
+    },
+    {
+      "name": "debug-clang",
+      "configurePreset": "debug-clang"
+    },
+    {
+      "name": "release-clang",
+      "configurePreset": "release-clang"
+    },
+    {
+      "name": "debug-asan-clang",
+      "configurePreset": "debug-asan-clang"
+    },
+    {
+      "name": "debug-tsan-clang",
+      "configurePreset": "debug-tsan-clang"
     }
   ],
   "testPresets": [
@@ -94,6 +142,34 @@
     {
       "name": "debug-tsan",
       "configurePreset": "debug-tsan",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "debug-clang",
+      "configurePreset": "debug-clang",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "release-clang",
+      "configurePreset": "release-clang",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "debug-asan-clang",
+      "configurePreset": "debug-asan-clang",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "debug-tsan-clang",
+      "configurePreset": "debug-tsan-clang",
       "output": {
         "outputOnFailure": true
       }
