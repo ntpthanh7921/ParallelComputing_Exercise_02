@@ -102,6 +102,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(googletest)
 
+# --- Google Benchmark ---
+FetchContent_Declare(
+  googlebenchmark
+  GIT_REPOSITORY https://github.com/google/benchmark.git
+  GIT_TAG        v1.9.2 # Or latest release tag
+)
+FetchContent_MakeAvailable(googlebenchmark)
+
 # ==============================================================================
 # Library Targets
 # ==============================================================================
@@ -145,6 +153,11 @@ target_include_directories(assignment2_cpp PRIVATE
 # Testing Setup
 # ==============================================================================
 add_subdirectory(tests)
+
+# ==============================================================================
+# Benchmarking Setup
+# ==============================================================================
+add_subdirectory(benchmarks)
 
 # ==============================================================================
 # Build Information Message
