@@ -71,11 +71,15 @@ else()
 endif()
 
 # --- Optimization Flags (LTO Example) ---
-if(CMAKE_BUILD_TYPE STREQUAL "Release" AND NOT MSVC)
+# Apply LTO only if building in Release mode, not MSVC, and NOT during FetchContent population
+if(CMAKE_BUILD_TYPE STREQUAL "Release" AND NOT MSVC AND NOT FETCHCONTENT_POPULATING)
+  message(STATUS "Enabling Link-Time Optimization (LTO) for project targets.")
   string(APPEND CMAKE_CXX_FLAGS_RELEASE " -flto=auto")
   string(APPEND CMAKE_EXE_LINKER_FLAGS_RELEASE " -flto=auto")
   string(APPEND CMAKE_SHARED_LINKER_FLAGS_RELEASE " -flto=auto")
   string(APPEND CMAKE_MODULE_LINKER_FLAGS_RELEASE " -flto=auto")
+else()
+  message(STATUS "LTO disabled (Build type is not Release, is MSVC, or FetchContent is populating).")
 endif()
 
 # ==============================================================================
