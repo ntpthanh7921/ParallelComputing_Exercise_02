@@ -31,7 +31,7 @@ add_custom_target(
       # Add default arguments for Google Benchmark here if desired
       --benchmark_out_format=json
       --benchmark_out=${CMAKE_SOURCE_DIR}/benchmarks/set_benchmarks_result.json
-      --benchmark_repetitions=20
+      --benchmark_repetitions=5
   WORKING_DIRECTORY # Set the working directory
       ${CMAKE_BINARY_DIR}/benchmarks # Where the executable is usually placed
   DEPENDS           # Ensure the new benchmark executable is built first
