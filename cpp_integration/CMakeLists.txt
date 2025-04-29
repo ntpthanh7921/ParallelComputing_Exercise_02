@@ -104,6 +104,10 @@ FetchContent_Declare(
   GIT_REPOSITORY https://github.com/google/googletest.git
   GIT_TAG v1.16.0 # Specify desired release tag
 )
+
+# Attempt to disable building/registering Google Test's own tests
+set(BUILD_GTEST OFF CACHE BOOL "Disable building Google Test's own tests" FORCE)
+
 FetchContent_MakeAvailable(googletest)
 
 # --- Google Benchmark ---
@@ -112,6 +116,11 @@ FetchContent_Declare(
   GIT_REPOSITORY https://github.com/google/benchmark.git
   GIT_TAG        v1.9.2 # Or latest release tag
 )
+
+# Disable building/registering Google Benchmark's own internal tests
+set(BENCHMARK_ENABLE_GTEST_TESTS OFF CACHE BOOL "Disable Google Benchmark's own unit tests" FORCE)
+set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "Disable Google Benchmark's testing" FORCE)
+
 FetchContent_MakeAvailable(googlebenchmark)
 
 # ==============================================================================
