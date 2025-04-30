@@ -1,39 +1,61 @@
-# Include GoogleTest (already present)
+# Include GoogleTest (already present via FetchContent in parent CMakeLists.txt)
 include(GoogleTest)
 
-# --- Executable 1: Sequential Tests ---
+# --- Executable 1: Set Sequential Tests ---
 add_executable(
-  run_sequential_tests      # Name for the sequential test executable
-  set_sequential_test.cpp   # Source file for sequential tests
+  run_set_sequential_tests      # Target name
+  set_sequential_test.cpp   # Source file
 )
-
-# Link sequential tests against GTest and your library
 target_link_libraries(
-  run_sequential_tests
+  run_set_sequential_tests
   PRIVATE
-  GTest::gtest_main         # Use gtest_main to provide main() function
+  GTest::gtest_main         # Use gtest_main to provide main()
   data_structures_lib      # Your library target
 )
+gtest_discover_tests(run_set_sequential_tests)
 
-# Discover tests within the sequential executable
-gtest_discover_tests(run_sequential_tests)
 
-# --- Executable 2: Concurrent Tests ---
+# --- Executable 2: Set Concurrent Tests ---
 add_executable(
-  run_concurrent_tests      # Name for the concurrent test executable
-  set_concurrent_test.cpp   # Source file for concurrent tests
+  run_set_concurrent_tests      # Target name
+  set_concurrent_test.cpp   # Source file
 )
-
-# Link concurrent tests against GTest and your library
-# Note: If concurrent tests require <thread>, ensure C++ standard supports it (C++17 is set)
-# and link against pthreads if necessary on POSIX systems (CMake often handles this automatically)
+# Link against GTest, your library, and potentially Threads if needed explicitly
+# (Though modern CMake/C++ usually handle std::thread linkage)
 target_link_libraries(
-  run_concurrent_tests
+  run_set_concurrent_tests
   PRIVATE
   GTest::gtest_main
   data_structures_lib
-  # Threads::Threads # Usually not needed explicitly with modern CMake/C++11 threads
+  # Threads::Threads # Usually not needed explicitly unless specific issues arise
 )
+gtest_discover_tests(run_set_concurrent_tests)
 
-# Discover tests within the concurrent executable
-gtest_discover_tests(run_concurrent_tests)
+
+# --- Executable 3: Priority Queue Sequential Tests ---
+add_executable(
+  run_pq_sequential_tests      # Target name
+  pq_sequential_test.cpp   # Source file for PQ sequential tests
+)
+target_link_libraries(
+  run_pq_sequential_tests
+  PRIVATE
+  GTest::gtest_main
+  data_structures_lib      # Link against the same library
+)
+gtest_discover_tests(run_pq_sequential_tests)
+
+
+# --- Executable 4: Priority Queue Concurrent Tests ---
+add_executable(
+  run_pq_concurrent_tests      # Target name
+  pq_concurrent_test.cpp   # Source file for PQ concurrent tests
+)
+target_link_libraries(
+  run_pq_concurrent_tests
+  PRIVATE
+  GTest::gtest_main
+  data_structures_lib
+  # Threads::Threads # Usually not needed explicitly
+)
+gtest_discover_tests(run_pq_concurrent_tests)
