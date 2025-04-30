@@ -1,45 +1,71 @@
 # Find Threads package (needed by Google Benchmark for threading support)
 find_package(Threads REQUIRED)
 
-# Add the benchmark executable with the new name
+# --- Set Benchmark ---
 add_executable(
-  set_benchmarks_executable    # New name for the benchmark executable
-  set_benchmark.cpp            # Source file for benchmarks
+  set_benchmarks_executable
+  set_benchmark.cpp
 )
 
-# Link benchmark executable against Google Benchmark, Threads, and your library
 target_link_libraries(
-  set_benchmarks_executable    # Use the new name here
+  set_benchmarks_executable
   PRIVATE
-  benchmark::benchmark         # Google Benchmark library target
-  Threads::Threads             # Threads library
-  data_structures_lib          # Your set implementations library (defined in parent CMakeLists.txt)
+  benchmark::benchmark
+  Threads::Threads
+  data_structures_lib
 )
 
-# Optional: Improve executable location (places it in build/benchmarks)
-set_target_properties(set_benchmarks_executable PROPERTIES # Use the new name here
+set_target_properties(set_benchmarks_executable PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/benchmarks"
 )
 
-# --- Custom Target to Run Benchmarks ---
 add_custom_target(
-  run_set_benchmarks  # Name of the custom target (can stay the same or change)
-  COMMAND         # Command to execute
-      ${CMAKE_COMMAND} -E echo "Running benchmarks..." # Optional: Print a message
-  COMMAND         # The actual benchmark command
-      $<TARGET_FILE:set_benchmarks_executable> # Use the new executable target name
-      # Add default arguments for Google Benchmark here if desired
+  run_set_benchmarks
+  COMMAND ${CMAKE_COMMAND} -E echo "Running Set benchmarks..."
+  COMMAND $<TARGET_FILE:set_benchmarks_executable>
       --benchmark_out_format=json
       --benchmark_out=${CMAKE_SOURCE_DIR}/benchmarks/set_benchmarks_result.json
       --benchmark_repetitions=5
-  WORKING_DIRECTORY # Set the working directory
-      ${CMAKE_BINARY_DIR}/benchmarks # Where the executable is usually placed
-  DEPENDS           # Ensure the new benchmark executable is built first
-      set_benchmarks_executable # Use the new name here
-  COMMENT           # Message printed during build
-      "Running set benchmarks..."
-  VERBATIM          # Pass commands as-is
+  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/benchmarks
+  DEPENDS set_benchmarks_executable
+  COMMENT "Running set benchmarks..."
+  VERBATIM
 )
 
-message(STATUS "Benchmark executable 'set_benchmarks_executable' will be built.") # Updated message
-message(STATUS "Run benchmarks using: cmake --build <build_dir> --target run_benchmarks")
+# --- Priority Queue Benchmark (NEW) ---
+add_executable(
+  pq_benchmarks_executable     # New executable name
+  pq_benchmark.cpp            # New source file
+)
+
+target_link_libraries(
+  pq_benchmarks_executable    # Link the new executable
+  PRIVATE
+  benchmark::benchmark
+  Threads::Threads
+  data_structures_lib        # Also links against your library (for custom PQ)
+)
+
+set_target_properties(pq_benchmarks_executable PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/benchmarks"
+)
+
+add_custom_target(
+  run_pq_benchmarks           # New custom target name
+  COMMAND ${CMAKE_COMMAND} -E echo "Running Priority Queue benchmarks..."
+  COMMAND $<TARGET_FILE:pq_benchmarks_executable> # Run the new executable
+      # Use different output file for PQ results
+      --benchmark_out_format=json
+      --benchmark_out=${CMAKE_SOURCE_DIR}/benchmarks/pq_benchmarks_result.json
+      --benchmark_repetitions=5 # Or adjust as needed
+  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/benchmarks
+  DEPENDS pq_benchmarks_executable  # Depends on the new executable
+  COMMENT "Running priority queue benchmarks..."
+  VERBATIM
+)
+
+
+message(STATUS "Set benchmark executable 'set_benchmarks_executable' will be built.")
+message(STATUS "Run set benchmarks using: cmake --build <build_dir> --target run_set_benchmarks")
+message(STATUS "Priority Queue benchmark executable 'pq_benchmarks_executable' will be built.")
+message(STATUS "Run PQ benchmarks using: cmake --build <build_dir> --target run_pq_benchmarks")
