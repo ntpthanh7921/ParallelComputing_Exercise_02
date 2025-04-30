@@ -18,8 +18,8 @@ DEFAULT_PRESET_NAME = "release"
 
 HIGH_COST_ZONE = {
     "min_lat": 35.6895,
-    "max_lat": 35.6950,
-    "min_lon": 139.6900,
+    "max_lat": 60.6950,
+    "min_lon": 119.6900,
     "max_lon": 139.7050,
 }
 DYNAMIC_PENALTY = 1000  # meters added to heuristic for nodes in the zone
