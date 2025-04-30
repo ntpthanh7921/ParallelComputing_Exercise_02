@@ -18,7 +18,7 @@ struct SeqNode
     T val;
     SeqNode<T> *next;
 
-    SeqNode(T v, SeqNode<T> *n = nullptr) : val(v), next(n) { }
+    SeqNode(T v, SeqNode<T> *n = nullptr) : val(std::move(v)), next(n) { }
 };
 
 // Sequential Sorted Linked List Implementation

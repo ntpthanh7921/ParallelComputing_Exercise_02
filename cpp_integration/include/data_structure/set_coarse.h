@@ -23,7 +23,7 @@ struct CoarseNode
     T val;
     CoarseNode<T> *next;
 
-    CoarseNode(T v, CoarseNode<T> *n = nullptr) : val(v), next(n) { }
+    CoarseNode(T v, CoarseNode<T> *n = nullptr) : val(std::move(v)), next(n) { }
 };
 
 // Coarse-Grained Locking Implementation

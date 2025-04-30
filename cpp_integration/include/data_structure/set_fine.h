@@ -22,7 +22,7 @@ struct FineNode
     FineNode<T> *next;
     std::mutex node_mutex;  // Mutex for each node
 
-    FineNode(T v, FineNode<T> *n = nullptr) : val(v), next(n) { }
+    FineNode(T v, FineNode<T> *n = nullptr) : val(std::move(v)), next(n) { }
 
     // Default destructor ok
     // No copy/move for mutex (implicitly deleted/defaulted)
