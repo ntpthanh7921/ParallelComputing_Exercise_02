@@ -26,7 +26,7 @@ enable_testing()
 if(MSVC)
   add_compile_options(/W4)
 else()
-  add_compile_options(-Wall -Wextra -Wpedantic)
+  add_compile_options(-Wall -Wextra -Wpedantic -pthread)
   add_compile_options(-fvisibility=hidden)
 endif()
 
