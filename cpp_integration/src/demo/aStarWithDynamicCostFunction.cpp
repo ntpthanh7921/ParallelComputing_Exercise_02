@@ -1,4 +1,4 @@
-#include "demo/astar.h"
+#include "demo/aStarWithDynamicCostFunction.h"
 #include <algorithm>
 #include <limits>
 #include <queue>
@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace Demo
+namespace AStarEnhancement
 {
 
 struct AStarNode

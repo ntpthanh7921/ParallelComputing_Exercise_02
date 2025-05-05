@@ -135,7 +135,7 @@ def run_cpp_astar(cpp_module, cpp_network, start_node, end_node):
     cpp_path = None
     try:
         # Access the function within the 'demo' submodule
-        cpp_path = cpp_module.demo.astar_search_demo(cpp_network, start_node, end_node)
+        cpp_path = cpp_module.demo.astar_search_demo_with_dynamic_cost_function(cpp_network, start_node, end_node)
         cpp_time = time.time() - start_time
         if not cpp_path:  # C++ returns empty list [] if no path
             print(f"C++ A*: No path found in {cpp_time:.4f} seconds.")
