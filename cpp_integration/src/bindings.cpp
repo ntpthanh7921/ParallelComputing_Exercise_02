@@ -1,4 +1,5 @@
 #include "demo/astar.h"    // A* algorithm implementation
+#include "demo/aStarWithDynamicCostFunction.h"
 #include "graph_types.h"   // Node, Edge definitions
 #include "road_network.h"  // RoadNetwork class definition
 
@@ -89,6 +90,16 @@ PYBIND11_MODULE(assignment2_cpp, m)
                py::arg("goal_node"),          // Goal node ID
                py::return_value_policy::move  // Efficiently move the resulting vector to Python
     );
+
+    demo_m.def("astar_search_demo_with_dynamic_cost_function",
+        &AStarEnhancement::astar_search,  // The C++ function to bind
+        "Find the shortest path using the A* algorithm (Demo Implementation). Returns a "
+        "list of node IDs.",
+        py::arg("network"),            // Expects a RoadNetwork object from Python
+        py::arg("start_node"),         // Starting node ID
+        py::arg("goal_node"),          // Goal node ID
+        py::return_value_policy::move  // Efficiently move the resulting vector to Python
+);
 
     demo_m.def("astar_search_sequential",
                &Demo::Sequential_astar_search,  // The C++ function to bind

@@ -132,7 +132,18 @@ add_library(demo_lib STATIC src/demo/astar.cpp)
 target_include_directories(demo_lib PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
 )
+
 target_link_libraries(demo_lib PRIVATE
+    pybind11::headers
+    Python::Python
+)
+
+add_library(demo_lib_dynamic_cost_function STATIC src/demo/aStarWithDynamicCostFunction.cpp)
+target_include_directories(demo_lib_dynamic_cost_function PUBLIC
+    "${CMAKE_CURRENT_SOURCE_DIR}/include"
+)
+
+target_link_libraries(demo_lib_dynamic_cost_function PRIVATE
     pybind11::headers
     Python::Python
 )
@@ -154,6 +165,7 @@ pybind11_add_module(assignment2_cpp MODULE ${MODULE_SOURCES})
 # --- Linking for the Python Module ---
 target_link_libraries(assignment2_cpp PRIVATE
     demo_lib
+    demo_lib_dynamic_cost_function
     data_structures_lib
 )
 
