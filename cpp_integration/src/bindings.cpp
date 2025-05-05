@@ -100,4 +100,25 @@ PYBIND11_MODULE(assignment2_cpp, m)
         py::arg("goal_node"),          // Goal node ID
         py::return_value_policy::move  // Efficiently move the resulting vector to Python
 );
+
+    demo_m.def("astar_search_sequential",
+               &Demo::Sequential_astar_search,  // The C++ function to bind
+               "Find the shortest path using the A* algorithm (Demo Implementation). Returns a "
+               "list of node IDs.",
+               py::arg("network"),            // Expects a RoadNetwork object from Python
+               py::arg("start_node"),         // Starting node ID
+               py::arg("goal_node"),          // Goal node ID
+               py::return_value_policy::move  // Efficiently move the resulting vector to Python
+    );
+
+    demo_m.def("astar_search_parallel",
+               &Demo::Parallel_astar_search,  // The C++ function to bind
+               "Find the shortest path using the A* algorithm (Demo Implementation). Returns a "
+               "list of node IDs.",
+               py::arg("network"),            // Expects a RoadNetwork object from Python
+               py::arg("start_node"),         // Starting node ID
+               py::arg("goal_node"),          // Goal node ID
+               py::arg("num_threads"),         // Number of threads
+               py::return_value_policy::move  // Efficiently move the resulting vector to Python
+    );
 }
