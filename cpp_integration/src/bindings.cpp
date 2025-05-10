@@ -81,44 +81,106 @@ PYBIND11_MODULE(assignment2_cpp, m)
     py::module_ demo_m = m.def_submodule("demo", "Submodule for demo algorithm implementations");
 
     // --- Bind A* search function ---
-    demo_m.def("astar_search_demo",
-               &Demo::astar_search,  // The C++ function to bind
-               "Find the shortest path using the A* algorithm (Demo Implementation). Returns a "
-               "list of node IDs.",
+
+    // ---- Normal A* search function ----
+    demo_m.def("AStar_search",
+               &AStar::search,  // The C++ function to bind
+               "Find the shortest path using the A* algorithm (Sequential Implementation). Returns a list of node IDs.",
                py::arg("network"),            // Expects a RoadNetwork object from Python
                py::arg("start_node"),         // Starting node ID
                py::arg("goal_node"),          // Goal node ID
                py::return_value_policy::move  // Efficiently move the resulting vector to Python
     );
 
-    demo_m.def("astar_search_demo_with_dynamic_cost_function",
-        &AStarEnhancement::astar_search,  // The C++ function to bind
-        "Find the shortest path using the A* algorithm (Demo Implementation). Returns a "
-        "list of node IDs.",
-        py::arg("network"),            // Expects a RoadNetwork object from Python
-        py::arg("start_node"),         // Starting node ID
-        py::arg("goal_node"),          // Goal node ID
-        py::return_value_policy::move  // Efficiently move the resulting vector to Python
-);
+    demo_m.def("AStarParallel_search_TPool_CppLib",
+               &AStarParallel::search_TPool_CppLib,  // The C++ function to bind
+               "Find the shortest path using the A* algorithm (Parallel with thread pool and C++ library Implementation). Returns a list of node IDs.",
+               py::arg("network"),            // Expects a RoadNetwork object from Python
+               py::arg("start_node"),         // Starting node ID
+               py::arg("goal_node"),          // Goal node ID
+               py::arg("num_threads"),        // Number of threads
+               py::return_value_policy::move  // Efficiently move the resulting vector to Python
+    );
 
-    demo_m.def("astar_search_sequential",
-               &Demo::Sequential_astar_search,  // The C++ function to bind
-               "Find the shortest path using the A* algorithm (Demo Implementation). Returns a "
-               "list of node IDs.",
+    demo_m.def("AStarParallel_search_TVector_CppLib",
+               &AStarParallel::search_TVector_CppLib,  // The C++ function to bind
+               "Find the shortest path using the A* algorithm (Parallel with thread vector and C++ library Implementation). Returns a list of node IDs.",
+               py::arg("network"),            // Expects a RoadNetwork object from Python
+               py::arg("start_node"),         // Starting node ID
+               py::arg("goal_node"),          // Goal node ID
+               py::arg("num_threads"),        // Number of threads
+               py::return_value_policy::move  // Efficiently move the resulting vector to Python
+    );
+
+    demo_m.def("AStarParallel_search_TPool_PqFine",
+               &AStarParallel::search_TPool_PqFine,  // The C++ function to bind
+               "Find the shortest path using the A* algorithm (Parallel with thread pool and pq_fine library Implementation). Returns a list of node IDs.",
+               py::arg("network"),            // Expects a RoadNetwork object from Python
+               py::arg("start_node"),         // Starting node ID
+               py::arg("goal_node"),          // Goal node ID
+               py::arg("num_threads"),        // Number of threads
+               py::return_value_policy::move  // Efficiently move the resulting vector to Python
+    );
+
+    demo_m.def("AStarParallel_search_TVector_PqFine",
+               &AStarParallel::search_TVector_PqFine,  // The C++ function to bind
+               "Find the shortest path using the A* algorithm (Parallel with thread vector and pq_fine library Implementation). Returns a list of node IDs.",
+               py::arg("network"),            // Expects a RoadNetwork object from Python
+               py::arg("start_node"),         // Starting node ID
+               py::arg("goal_node"),          // Goal node ID
+               py::arg("num_threads"),        // Number of threads
+               py::return_value_policy::move  // Efficiently move the resulting vector to Python
+    );
+
+    // ---- Dynamic cost function A* search function ----
+    demo_m.def("AStarEnhancement_search",
+               &AStarEnhancement::search,  // The C++ function to bind
+               "Find the shortest path using the A* algorithm (Sequential Implementation). Returns a list of node IDs.",
                py::arg("network"),            // Expects a RoadNetwork object from Python
                py::arg("start_node"),         // Starting node ID
                py::arg("goal_node"),          // Goal node ID
                py::return_value_policy::move  // Efficiently move the resulting vector to Python
     );
 
-    demo_m.def("astar_search_parallel",
-               &Demo::Parallel_astar_search,  // The C++ function to bind
-               "Find the shortest path using the A* algorithm (Demo Implementation). Returns a "
-               "list of node IDs.",
+    demo_m.def("AStarEnhancementParallel_search_TPool_CppLib",
+               &AStarEnhancementParallel::search_TPool_CppLib,  // The C++ function to bind
+               "Find the shortest path using the A* algorithm (Parallel with thread pool and C++ library Implementation). Returns a list of node IDs.",
                py::arg("network"),            // Expects a RoadNetwork object from Python
                py::arg("start_node"),         // Starting node ID
                py::arg("goal_node"),          // Goal node ID
-               py::arg("num_threads"),         // Number of threads
+               py::arg("num_threads"),        // Number of threads
                py::return_value_policy::move  // Efficiently move the resulting vector to Python
     );
+
+    demo_m.def("AStarEnhancementParallel_search_TVector_CppLib",
+               &AStarEnhancementParallel::search_TVector_CppLib,  // The C++ function to bind
+               "Find the shortest path using the A* algorithm (Parallel with thread vector and C++ library Implementation). Returns a list of node IDs.",
+               py::arg("network"),            // Expects a RoadNetwork object from Python
+               py::arg("start_node"),         // Starting node ID
+               py::arg("goal_node"),          // Goal node ID
+               py::arg("num_threads"),        // Number of threads
+               py::return_value_policy::move  // Efficiently move the resulting vector to Python
+    );
+
+    demo_m.def("AStarEnhancementParallel_search_TPool_PqFine",
+               &AStarEnhancementParallel::search_TPool_PqFine,  // The C++ function to bind
+               "Find the shortest path using the A* algorithm (Parallel with thread pool and pq_fine library Implementation). Returns a list of node IDs.",
+               py::arg("network"),            // Expects a RoadNetwork object from Python
+               py::arg("start_node"),         // Starting node ID
+               py::arg("goal_node"),          // Goal node ID
+               py::arg("num_threads"),        // Number of threads
+               py::return_value_policy::move  // Efficiently move the resulting vector to Python
+    );
+
+    demo_m.def("AStarEnhancementParallel_search_TVector_PqFine",
+               &AStarEnhancementParallel::search_TVector_PqFine,  // The C++ function to bind
+               "Find the shortest path using the A* algorithm (Parallel with thread vector and pq_fine library Implementation). Returns a list of node IDs.",
+               py::arg("network"),            // Expects a RoadNetwork object from Python
+               py::arg("start_node"),         // Starting node ID
+               py::arg("goal_node"),          // Goal node ID
+               py::arg("num_threads"),        // Number of threads
+               py::return_value_policy::move  // Efficiently move the resulting vector to Python
+    );
+    
+
 }
